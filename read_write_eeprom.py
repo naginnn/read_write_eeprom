@@ -4,6 +4,7 @@ import serial
 import serial.tools.list_ports
 import time
 import struct
+import FloatToHex, cgi, sys, math
 import binascii
 
 def serial_ports():
@@ -362,7 +363,7 @@ class WriteParam:
             frame.append(crc)
             return frame
 
-        if (param == 0x04 or param == 0x05 or param == 0x06 or param == 0x07 or param == 0x08 or param == 0x09):
+        if (param == 0x04 or param == 0x05 or param == 0x06 or param == 0x07 or param == 0x08 or param == 0x09 or param == 0x87):
             frame.append(param)
             frame.append(0x0A)
             frame.append(key)
@@ -460,11 +461,17 @@ def load_param():
 
 def float_to_hex(f):
     data = []
-    temp2 = hex(struct.unpack('<I', struct.pack('<f', f))[0])[2:]
-    data.append(int(temp2[6:8],16))
-    data.append(int(temp2[4:6],16))
-    data.append(int(temp2[2:4],16))
-    data.append(int(temp2[0:2],16))
+    if f == 0:
+        data.append(0)
+        data.append(0)
+        data.append(0)
+        data.append(0)
+    else:
+        temp2 = hex(struct.unpack('<I', struct.pack('<f', f))[0])[2:]
+        data.append(int(temp2[6:8],16))
+        data.append(int(temp2[4:6],16))
+        data.append(int(temp2[2:4],16))
+        data.append(int(temp2[0:2],16))
     return data
 #   0x17 function modbus
 # # 0x01 0x17 0x40 0x55 0x00 0x04 0x40 0xAA 0x00 0x04 [длина фрейма 232] [фрейм 232] [hi] [lo]
@@ -472,6 +479,17 @@ def float_to_hex(f):
 
 # С записью понятно, теперь считывание
 if __name__ == '__main__':
+    print("Float: ",1)
+    my = FloatToHex.floattohex(1)
+    print("FloatToHex: ",my)
+    my = hex(my)
+    print("hex: ", my)
+    my = int(my,16)
+    print("int: ", my)
+    my = FloatToHex.hextofloat(my)
+    print("HexToFloat: ", my)
+    # 0x3f800000
+
     f = open('settings.cfg', 'r')
     params = {}
     for line in f:
@@ -479,11 +497,11 @@ if __name__ == '__main__':
         for t in temp:
             par_name = t.split("=")
             params.update({par_name[0] : par_name[1]})
-
-    # начало формирования фреймов
+    #
+    # # начало формирования фреймов
     package = []
     write = WriteParam()
-    print("ModSetConsole for PSC 24_10")
+    # print("ModSetConsole for PSC 24_10")
 
     # # Записать серийник
     # print("Enter serial number")
@@ -495,38 +513,40 @@ if __name__ == '__main__':
     # package.append(write.network_settings(registers_pointer.get(0x01).get("InterfaceSpeed"), int(params.get("InterfaceSpeed"))))
     # package.append(write.network_settings(registers_pointer.get(0x01).get("InterfaceChet"), params.get("InterfaceChet")))
     # package.append(write.network_settings(registers_pointer.get(0x01).get("ProtocolType"), params.get("ProtocolType")))
-
-    # управление питанием pw1
-    package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_nom"), float(params.get("pw1_u_nom"))))
-    package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_min"), float(params.get("pw1_u_min"))))
-    package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_max"), float(params.get("pw1_u_max"))))
-    package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_min_hyst"), float(params.get("pw1_u_min_hyst"))))
-    package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_max_hyst"), float(params.get("pw1_u_max_hyst"))))
-
-    # управление питанием pw2
-    package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_nom"), float(params.get("pw2_u_nom"))))
-    package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_min"), float(params.get("pw2_u_min"))))
-    package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_max"), float(params.get("pw2_u_max"))))
-    package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_min_hyst"), float(params.get("pw2_u_min_hyst"))))
-    package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_max_hyst"), float(params.get("pw2_u_max_hyst"))))
-
-    # управление питанием pw3 (BTR)
-    package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_nom"), float(params.get("btr_u_nom"))))
-    package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_min"), float(params.get("btr_u_min"))))
-    package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_max"), float(params.get("btr_u_max"))))
-    package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_min_hyst"), float(params.get("btr_u_min_hyst"))))
-    package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_max_hyst"), float(params.get("btr_u_max_hyst"))))
     #
+    # # управление питанием pw1
+    # package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_nom"), float(params.get("pw1_u_nom"))))
+    # package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_min"), float(params.get("pw1_u_min"))))
+    # package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_max"), float(params.get("pw1_u_max"))))
+    # package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_min_hyst"), float(params.get("pw1_u_min_hyst"))))
+    # package.append(write.power_management(register_names.get("pw1u"), registers_pointer.get(0x04).get("pw1_u_max_hyst"), float(params.get("pw1_u_max_hyst"))))
+    #
+    # # управление питанием pw2
+    # package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_nom"), float(params.get("pw2_u_nom"))))
+    # package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_min"), float(params.get("pw2_u_min"))))
+    # package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_max"), float(params.get("pw2_u_max"))))
+    # package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_min_hyst"), float(params.get("pw2_u_min_hyst"))))
+    # package.append(write.power_management(register_names.get("pw2u"), registers_pointer.get(0x05).get("pw2_u_max_hyst"), float(params.get("pw2_u_max_hyst"))))
+    #
+    # # управление питанием pw3 (BTR)
+    # package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_nom"), float(params.get("btr_u_nom"))))
+    # package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_min"), float(params.get("btr_u_min"))))
+    # package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_max"), float(params.get("btr_u_max"))))
+    # package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_min_hyst"), float(params.get("btr_u_min_hyst"))))
+    # package.append(write.power_management(register_names.get("btru"), registers_pointer.get(0x06).get("btr_u_max_hyst"), float(params.get("btr_u_max_hyst"))))
+    # #
     # управление питанием outi
-    package.append(write.power_management(register_names.get("outi"), registers_pointer.get(0x07).get("out_i_1"), float(params.get("out_i_1"))))
-    package.append(write.power_management(register_names.get("outi"), registers_pointer.get(0x07).get("out_i_2"), float(params.get("out_i_2"))))
-    #
-    # управление АКБ
-    package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_err_min"), float(params.get("charge_err_min"))))
-    package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_u_max"), float(params.get("charge_u_max"))))
-    package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_u_min"), float(params.get("charge_u_min"))))
-    package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_i_stable"), float(params.get("charge_i_stable"))))
-    package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_u_stable"), float(params.get("charge_u_stable"))))
+    # package.append(write.power_management(register_names.get("outi"), registers_pointer.get(0x07).get("out_i_1"), float(params.get("out_i_1"))))
+    # package.append(write.power_management(register_names.get("outi"), registers_pointer.get(0x07).get("out_i_2"), float(params.get("out_i_2"))))
+    package.append(write.power_management(0x87, registers_pointer.get(0x07).get("out_i_1"),float(0)))
+    # package.append(write.power_management(register_names.get("outi"), registers_pointer.get(0x07).get("out_i_2"),float(0)))
+    # #
+    # # управление АКБ
+    # package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_err_min"), float(params.get("charge_err_min"))))
+    # package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_u_max"), float(params.get("charge_u_max"))))
+    # package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_u_min"), float(params.get("charge_u_min"))))
+    # package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_i_stable"), float(params.get("charge_i_stable"))))
+    # package.append(write.power_management(register_names.get("charge"), registers_pointer.get(0x08).get("charge_u_stable"), float(params.get("charge_u_stable"))))
     #
     #
     #                                     #!!!!!!!!!!!!!!!!!ДАТЧИКИ!!!!!!!!!!!!!!!!!!!
@@ -560,30 +580,29 @@ if __name__ == '__main__':
     # # 0x01 0x17 0x40 0x55 0x00 0x04 0x40 0xAA 0x00 0x04 [длина фрейма 232] [фрейм 232] [непонятная хуйня] [CRC]
     #
 
-    print("Modbus or Serial? - m or s" )
-    key = input()
-    com = ''
-    braudrate = 115200
-    timeout = 1
-    if key == "m":
-        com = 'com5'
-        braudrate = 115200
-        timeout = 1
-    if key == "s":
-        com = 'com6'
-        braudrate = 2400
-        timeout =1
-    ser = serial.Serial('com5', 115200, timeout=0.3)
+    # print("Modbus or Serial? - m or s" )
+    # key = input()
+    # com = ''
+    # braudrate = 115200
+    # timeout = 1
+    # if key == "m":
+    #     com = 'com5'
+    #     braudrate = 115200
+    #     timeout = 1
+    # if key == "s":
+    #     com = 'com6'
+    #     braudrate = 2400
+    #     timeout =1
+    ser = serial.Serial('com10', 2400, timeout=0.3)
     for frame in package:
-        if key == "m":
-            values = bytearray(write_modbus(frame))
-        if key == "s":
-            values = bytearray(frame)
+        values = bytearray(frame)
         print("write: ", values)
         ser.write(values)
         response = ser.read(len(values))
         print("read: ", response)
         print(values == response)
+        for rep in response:
+            print(int(rep))
         # time.sleep(0.5)
     #
     #
