@@ -125,7 +125,7 @@ class WriteParam:
             frame.append(value)
             crc = self.crc_calculate(frame)
             frame.append(crc)
-            return frame
+            return frame #fdsadsa
         if (key == 0x02):
             frame.append(0x08)
             frame.append(0x02)
