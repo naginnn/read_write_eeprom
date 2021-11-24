@@ -108,7 +108,7 @@ def crc16(data):
         index = crchi ^ int(byte)
         crchi = crclo ^ LOBYTE[index]
         crclo = HIBYTE[index]
-    # print("{0:02X} {1:02X}".format(crclo, crchi))
+    # print("{0:02X} {1:02X}".format(crclo, crchi)),
     return crchi, crclo
 # Просто кидать нули вместо данных в посылке! А может и нет!
 class ReadParam:
