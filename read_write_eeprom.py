@@ -115,9 +115,9 @@ def crc16(data):
 class ReadParam:
 
     # key в виде конкретного номера регистра номера байт управления уже передан добавить param как и везде
-    def network_settings(self,key,value):
+    def network_settings(self,param,key,value):
         frame = [0x55, 0xAA]
-        frame.append(0x01)
+        frame.append(param)
         if (key == 0x01):
             frame.append(0x07)
             frame.append(0x01)
